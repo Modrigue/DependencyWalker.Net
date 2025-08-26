@@ -128,7 +128,7 @@ namespace SindaSoft.DependencyWalker
                 name = a.GetName().Name;
                 retval.FillData(a);
 
-                AssemblyName[] anames = a.GetReferencedAssemblies();
+                AssemblyName[] anames = a.GetReferencedAssemblies().OrderBy(an => an.Name).ToArray();
                 foreach (AssemblyName an in anames)
                 {
                     if (!shouldWeIncludeIt(an))
@@ -177,7 +177,7 @@ namespace SindaSoft.DependencyWalker
                 Assembly a = Assembly.Load(anr.FullName);
                 tn.FillData(a);
 
-                AssemblyName[] anames = a.GetReferencedAssemblies();
+                AssemblyName[] anames = a.GetReferencedAssemblies().OrderBy(an => an.Name).ToArray();
                 foreach (AssemblyName an in anames)
                 {
                     if (!shouldWeIncludeIt(an))

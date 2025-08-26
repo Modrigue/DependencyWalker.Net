@@ -100,7 +100,7 @@ namespace SindaSoft.DependencyWalker
             {
                 Assembly a = Assembly.LoadFrom(name);
                 TreeNode tn = parent.tvReferencesTree.Nodes.Add(a.GetName().Name);
-                AssemblyName[] anames = a.GetReferencedAssemblies();
+                AssemblyName[] anames = a.GetReferencedAssemblies().OrderBy(an => an.Name).ToArray();
                 tn.Tag = a;
                 foreach (AssemblyName an in anames)
                 {
@@ -186,7 +186,7 @@ namespace SindaSoft.DependencyWalker
                 {
                 }
 
-                AssemblyName[] anames = a.GetReferencedAssemblies();
+                AssemblyName[] anames = a.GetReferencedAssemblies().OrderBy(an => an.Name).ToArray();
                 foreach (AssemblyName an in anames)
                 {
                     if (!shouldWeIncludeIt(an))

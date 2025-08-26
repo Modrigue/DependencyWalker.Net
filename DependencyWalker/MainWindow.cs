@@ -156,11 +156,11 @@ namespace SindaSoft.DependencyWalker
 
                 tbUsedBy.Text = "";
                 this.tbListOfReferences.Text = "";
-                foreach (string s in w.refass.Keys)
+                foreach (string s in w.refass.Keys.OrderBy(key => key))
                     this.tbListOfReferences.Text += s + "\r\n";
 
                 this.tbListOfReferences.Text += "\r\n\r\n\r\n";
-                foreach (string s in w.refass2filename.Keys)
+                foreach (string s in w.refass2filename.Keys.OrderBy(key => key))
                 {
                     this.tbListOfReferences.Text += (new Uri(w.refass2filename[s])).AbsolutePath
                                                     + "\r\n";
