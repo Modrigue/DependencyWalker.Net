@@ -107,21 +107,22 @@ namespace SindaSoft.DependencyWalker
                     if (!shouldWeIncludeIt(an))
                         continue;
 
-                    TreeNode tn2 = tn.Nodes.Add(an.Name);
+                    string nameVersion = $"{an.Name} {an.Version}";
+                    TreeNode tn2 = tn.Nodes.Add(nameVersion);
                     tn2.Tag = an;
 
-                    if (!refass.ContainsKey(an.Name))
+                    if (!refass.ContainsKey(nameVersion))
                     {
-                        refass[an.Name] = name;
+                        refass[nameVersion] = nameVersion;
                         inspectAssembly(tn2, an);
 
-                        ref2node[an.Name] = tn2;
+                        ref2node[nameVersion] = tn2;
                     }
                     else
                     {
-                        refass[an.Name] += "\n" + name;
+                        refass[nameVersion] += "\n" + nameVersion;
                         if (!isItInGlobalAssemblyCache(an))
-                            CloneNodes(ref2node[an.Name], tn2);
+                            CloneNodes(ref2node[nameVersion], tn2);
                     }
                 }
 
@@ -162,15 +163,16 @@ namespace SindaSoft.DependencyWalker
             try
             {
                 Assembly a = Assembly.Load(anr.FullName);
+                string nameVersionRef = $"{anr.Name} {anr.Version}";
 
 #if NET8_0_OR_GREATER
-                refass2filename[anr.Name] = a.Location; // Save assembly file location...
-                refass2isGAC[anr.Name] = false; // No GAC in .NET 8+
-                refass2dotnetversion[anr.Name] = ".NET CLR " + a.ImageRuntimeVersion;
+                refass2filename[nameVersionRef] = a.Location; // Save assembly file location...
+                refass2isGAC[nameVersionRef] = false; // No GAC in .NET 8+
+                refass2dotnetversion[nameVersionRef] = ".NET CLR " + a.ImageRuntimeVersion;
 #else
-                refass2filename[anr.Name] = a.CodeBase; // Save assembly file location...
-                refass2isGAC[anr.Name] = a.GlobalAssemblyCache; // Is it GAC ?
-                refass2dotnetversion[anr.Name] = ".NET CLR " + a.ImageRuntimeVersion;
+                refass2filename[nameVersionRef] = a.CodeBase; // Save assembly file location...
+                refass2isGAC[nameVersionRef] = a.GlobalAssemblyCache; // Is it GAC ?
+                refass2dotnetversion[nameVersionRef] = ".NET CLR " + a.ImageRuntimeVersion;
 #endif
 
                 try
@@ -180,7 +182,7 @@ namespace SindaSoft.DependencyWalker
                                      .OfType<System.Runtime.Versioning.TargetFrameworkAttribute>()
                                      .First();
 
-                    refass2dotnetversion[anr.Name] = attribute.FrameworkDisplayName;
+                    refass2dotnetversion[nameVersionRef] = attribute.FrameworkDisplayName;
                 }
                 catch
                 {
@@ -192,21 +194,22 @@ namespace SindaSoft.DependencyWalker
                     if (!shouldWeIncludeIt(an))
                         continue;
 
-                    TreeNode tn2 = tn.Nodes.Add(an.Name);
+                    string nameVersion = $"{an.Name} {an.Version}";
+                    TreeNode tn2 = tn.Nodes.Add(nameVersion);
                     tn2.Tag = an;
 
-                    if (!refass.ContainsKey(an.Name))
+                    if (!refass.ContainsKey(nameVersion))
                     {
-                        refass[an.Name] = anr.Name;
+                        refass[nameVersion] = $"{anr.Name} {anr.Version}";
                         inspectAssembly(tn2, an);       // Go deeply ....
 
-                        ref2node[an.Name] = tn2;
+                        ref2node[nameVersion] = tn2;
                     }
                     else
                     {
-                        refass[an.Name] += "\n" + anr.Name;
+                        refass[nameVersion] += "\n" + anr.Name;
                         if (!isItInGlobalAssemblyCache(an))
-                            CloneNodes(ref2node[an.Name], tn2);
+                            CloneNodes(ref2node[nameVersion], tn2);
                     }
                 }
 
