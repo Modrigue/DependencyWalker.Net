@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("ivica.sindicic@gmail.com")]
 [assembly: AssemblyProduct("Depends.Net.Cli")]
-[assembly: AssemblyCopyright("Copyright © ivica.sindicic@gmail.com 2022")]
+[assembly: AssemblyCopyright("Copyright © ivica.sindicic@gmail.com 2022-2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

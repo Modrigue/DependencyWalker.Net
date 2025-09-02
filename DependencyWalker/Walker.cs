@@ -55,7 +55,7 @@ namespace SindaSoft.DependencyWalker
                 currentDomain.AssemblyResolve -= new ResolveEventHandler(currentDomain_AssemblyResolve);
             }
             catch
-            { 
+            {
             }
         }
 
@@ -73,7 +73,7 @@ namespace SindaSoft.DependencyWalker
             refass2dotnetversion = new Dictionary<string, string>();
             type2ass = new Dictionary<string, string>();
             errors = new Dictionary<string, string>();
-            
+
             // Clear tree control
             parent.tvReferencesTree.Nodes.Clear();
 
@@ -100,32 +100,33 @@ namespace SindaSoft.DependencyWalker
             {
                 Assembly a = Assembly.LoadFrom(name);
                 TreeNode tn = parent.tvReferencesTree.Nodes.Add(a.GetName().Name);
-                AssemblyName[] anames = a.GetReferencedAssemblies();
+                AssemblyName[] anames = a.GetReferencedAssemblies().OrderBy(an => an.Name).ToArray();
                 tn.Tag = a;
                 foreach (AssemblyName an in anames)
                 {
                     if (!shouldWeIncludeIt(an))
                         continue;
 
-                    TreeNode tn2 = tn.Nodes.Add(an.Name);
+                    string nameVersion = $"{an.Name} {an.Version}";
+                    TreeNode tn2 = tn.Nodes.Add(nameVersion);
                     tn2.Tag = an;
 
-                    if (!refass.ContainsKey(an.Name))
+                    if (!refass.ContainsKey(nameVersion))
                     {
-                        refass[an.Name] = name;
+                        refass[nameVersion] = nameVersion;
                         inspectAssembly(tn2, an);
 
-                        ref2node[an.Name] = tn2;
+                        ref2node[nameVersion] = tn2;
                     }
                     else
                     {
-                        refass[an.Name] += "\n" + name;
+                        refass[nameVersion] += "\n" + nameVersion;
                         if (!isItInGlobalAssemblyCache(an))
-                            CloneNodes(ref2node[an.Name], tn2);
+                            CloneNodes(ref2node[nameVersion], tn2);
                     }
                 }
 
-                foreach(Type t in a.GetTypes())
+                foreach (Type t in a.GetTypes())
                     type2ass[getCSharpFromType(t)] = name;
             }
             catch (System.Reflection.ReflectionTypeLoadException ex)
@@ -162,10 +163,17 @@ namespace SindaSoft.DependencyWalker
             try
             {
                 Assembly a = Assembly.Load(anr.FullName);
+                string nameVersionRef = $"{anr.Name} {anr.Version}";
 
-                refass2filename[anr.Name] = a.CodeBase; // Save assembly file location... 
-                refass2isGAC[anr.Name] = a.GlobalAssemblyCache; // Is it GAC ? 
-                refass2dotnetversion[anr.Name] = ".NET CLR " + a.ImageRuntimeVersion;
+#if NET8_0_OR_GREATER
+                refass2filename[nameVersionRef] = a.Location; // Save assembly file location...
+                refass2isGAC[nameVersionRef] = false; // No GAC in .NET 8+
+                refass2dotnetversion[nameVersionRef] = ".NET CLR " + a.ImageRuntimeVersion;
+#else
+                refass2filename[nameVersionRef] = a.CodeBase; // Save assembly file location...
+                refass2isGAC[nameVersionRef] = a.GlobalAssemblyCache; // Is it GAC ?
+                refass2dotnetversion[nameVersionRef] = ".NET CLR " + a.ImageRuntimeVersion;
+#endif
 
                 try
                 {
@@ -174,33 +182,34 @@ namespace SindaSoft.DependencyWalker
                                      .OfType<System.Runtime.Versioning.TargetFrameworkAttribute>()
                                      .First();
 
-                    refass2dotnetversion[anr.Name] =  attribute.FrameworkDisplayName;
+                    refass2dotnetversion[nameVersionRef] = attribute.FrameworkDisplayName;
                 }
-                catch 
-                { 
+                catch
+                {
                 }
 
-                AssemblyName[] anames = a.GetReferencedAssemblies();
+                AssemblyName[] anames = a.GetReferencedAssemblies().OrderBy(an => an.Name).ToArray();
                 foreach (AssemblyName an in anames)
                 {
                     if (!shouldWeIncludeIt(an))
                         continue;
 
-                    TreeNode tn2 = tn.Nodes.Add(an.Name);
+                    string nameVersion = $"{an.Name} {an.Version}";
+                    TreeNode tn2 = tn.Nodes.Add(nameVersion);
                     tn2.Tag = an;
 
-                    if (!refass.ContainsKey(an.Name))
+                    if (!refass.ContainsKey(nameVersion))
                     {
-                        refass[an.Name] = anr.Name;
+                        refass[nameVersion] = $"{anr.Name} {anr.Version}";
                         inspectAssembly(tn2, an);       // Go deeply ....
 
-                        ref2node[an.Name] = tn2;
+                        ref2node[nameVersion] = tn2;
                     }
                     else
                     {
-                        refass[an.Name] += "\n" + anr.Name;
+                        refass[nameVersion] += "\n" + anr.Name;
                         if (!isItInGlobalAssemblyCache(an))
-                            CloneNodes(ref2node[an.Name], tn2);
+                            CloneNodes(ref2node[nameVersion], tn2);
                     }
                 }
 
@@ -216,7 +225,7 @@ namespace SindaSoft.DependencyWalker
                 errors[tn.Text] = String.Join("--->", treeNode2refList(tn).ToArray()) + "\r\n" + ex.ToString();
 
                 errors[tn.Text] += "\r\n--- Loader exceptions -----\r\n";
-                foreach(Exception eee in ex.LoaderExceptions)
+                foreach (Exception eee in ex.LoaderExceptions)
                     errors[tn.Text] += "\t" + eee.ToString() + "\r\n";
 
                 expandTree2Node(tn);
@@ -242,7 +251,7 @@ namespace SindaSoft.DependencyWalker
                 string className = name.Substring(0, t.Name.IndexOf('`'));
                 List<string> args = new List<string>();
                 foreach (Type arg in t.GetGenericArguments())
-                    args.Add( getCSharpFromType(arg) );
+                    args.Add(getCSharpFromType(arg));
                 return className + "<" + String.Join(",", args.ToArray()) + ">";
             }
             else
@@ -268,8 +277,8 @@ namespace SindaSoft.DependencyWalker
 
         private bool isItInGlobalAssemblyCache(AssemblyName an)
         {
-#if NETCOREAPP
-            return true;    // No GAC in .NET Core
+#if NET8_0_OR_GREATER
+            return false;
 #else
             try
             {
@@ -293,13 +302,15 @@ namespace SindaSoft.DependencyWalker
 
         private List<string> treeNode2refList(TreeNode tn)
         {
-            List<string> retval = new List<string>();
-            retval.Add( tn.Text );
+            List<string> retval = new List<string>
+            {
+                tn.Text
+            };
             TreeNode t = tn.Parent;
 
             while (t != null)
             {
-                retval.Insert(0,  t.Text);
+                retval.Insert(0, t.Text);
                 t = t.Parent;
             }
             return retval;
