@@ -32,7 +32,9 @@ jobs:
         run: nuget restore $env:SOLUTION_FILE_NET
 
       - name: Build with MSBuild
-        run: msbuild $env:SOLUTION_FILE_NET /p:Configuration=Release
+        run: |
+          python citools\update_version.py
+          msbuild $env:SOLUTION_FILE_NET /p:Configuration=Release
 
       - name: Upload Build Artifacts
         id: upload-net
@@ -67,7 +69,9 @@ jobs:
         run: nuget restore $env:SOLUTION_FILE_NET_FRAMEWORK
 
       - name: Build with MSBuild
-        run: msbuild $env:SOLUTION_FILE_NET_FRAMEWORK /p:Configuration=Release
+        run: |
+          python citools\update_version.py
+          msbuild $env:SOLUTION_FILE_NET_FRAMEWORK /p:Configuration=Release
 
       - name: Upload Build Artifacts
         id: upload-net-framework
